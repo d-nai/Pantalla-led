@@ -18,8 +18,9 @@ class ventanaPrincipal(QMainWindow):
             ["#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF"]
         ]
 
+        self.matrizBotones = []
         self.colorActual = "#FFFFFF"
-        self.setFixedSize(1000,1000)
+        self.setFixedSize(700,700)
         self.setStyleSheet("background: #F8F3EE;")
 
         self.layoutGeneral = QVBoxLayout()
@@ -56,6 +57,7 @@ class ventanaPrincipal(QMainWindow):
         self.botonAbrirArchivo = QPushButton()
         self.botonGuardarArchivo = QPushButton()
         self.botonBorrarArchivo = QPushButton()
+        self.botonBorrarArchivo.clicked.connect(self.borrarCuadricula)
 
         carpeta_iconos = Path(__file__).parent / "icons"
 
@@ -247,9 +249,11 @@ class ventanaPrincipal(QMainWindow):
 
         for fila in range(8):
             filaPixeles = []
+            filaBotones = []
 
             for columna in range(8):
                 pixel = QPushButton()
+                filaBotones.append(pixel)
                 pixel.setProperty("posicionX", int(fila))
                 pixel.setProperty("posicionY", int(columna))
                 pixel.setProperty("color", "#FFFFFF")
@@ -258,11 +262,12 @@ class ventanaPrincipal(QMainWindow):
                     QPushButton {background: white; border: none; padding: 0px;}
                     QPushButton:hover {border: 3px solid #35424A;}
                 """)
-                pixel.clicked.connect(self.pintarPixel)
+                pixel.clicked.connect(self.cambiarColorPixel)
                 self.layoutPixeles.addWidget(pixel, fila, columna)
                 filaPixeles.append(pixel)
 
             self.pixeles.append(filaPixeles)
+            self.matrizBotones.append(filaBotones)
 
         self.botonExportar = QPushButton("EXPORTAR")
         self.botonExportar.setStyleSheet("""
@@ -278,26 +283,27 @@ class ventanaPrincipal(QMainWindow):
         self.layoutLienzo.addWidget(self.framePixeles,alignment=Qt.AlignmentFlag.AlignCenter)
         self.layoutLienzo.addWidget(self.botonExportar,10)
 
-    def pintarPixel(self):
+    def cambiarColorPixel(self): # Esta va a actualizar la matriz interna
         pixel = self.sender()
-        pixel.setStyleSheet(
-            f"""
-                QPushButton {{background: {self.colorActual}; border: none; padding: 0px;}}
-                QPushButton:hover {{border: 3px solid #35424A;}}
-            """
-        )
-
-        x = pixel.property("posicionX")
-        y = pixel.property("posicionY")
-
-        self.matrizPixeles[x][y] = self.colorActual
-
-        print(f"X: {x} ; Y: {y} ; Color: {self.colorActual}")
-        for i in range(8):
-            print(self.matrizPixeles[i])
-
         
-
+        posicionX = pixel.property("posicionX")
+        posicionY = pixel.property("posicionY")
+        
+        self.matrizPixeles[posicionX][posicionY] = self.colorActual
+        
+        self.pintarPixel(posicionX, posicionY, self.colorActual)
+    
+    def pintarPixel(self, posx, posy, color): # Esta va a actualizar la informacion en pantalla
+        self.matrizBotones[posx][posy].setStyleSheet(f"""
+            QPushButton {{background: {color}}}
+            QPushButton:hover {{border: 3px solid #35424A;}}
+        """)
+    
+    def borrarCuadricula(self):
+        for i in range(8):
+            for j in range(8):
+                self.matrizPixeles[i][j] = "#FFFFFF"
+                self.pintarPixel(i,j,"#FFFFFF")
 
 
 
