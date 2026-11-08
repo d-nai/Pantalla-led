@@ -4,6 +4,7 @@ from pathlib import Path
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import QSize
 import sys
+import json
 
 class ventanaPrincipal(QMainWindow):
     def ventanaBase(self):
@@ -54,8 +55,14 @@ class ventanaPrincipal(QMainWindow):
         self.layoutBotonesArchivo = QHBoxLayout(self.frameBotonesArchivo)
 
         self.botonNuevoArchivo = QPushButton()
+        self.botonNuevoArchivo.clicked.connect(self.nuevoArchivo)
+        
         self.botonAbrirArchivo = QPushButton()
+        self.botonAbrirArchivo.clicked.connect(self.abrirArchivo)
+        
         self.botonGuardarArchivo = QPushButton()
+        self.botonGuardarArchivo.clicked.connect(self.guardarArchivo)
+        
         self.botonBorrarArchivo = QPushButton()
         self.botonBorrarArchivo.clicked.connect(self.borrarCuadricula)
 
@@ -304,7 +311,75 @@ class ventanaPrincipal(QMainWindow):
             for j in range(8):
                 self.matrizPixeles[i][j] = "#FFFFFF"
                 self.pintarPixel(i,j,"#FFFFFF")
-
+    
+    def nuevoArchivo(self):
+        mensaje = QMessageBox()
+        
+        mensaje.setWindowTitle("Nuevo archivo")
+        mensaje.setText("¿Quieres borrar el pixel art actual?")
+        
+        mensaje.setStandardButtons(
+            QMessageBox.StandardButton.Yes |
+            QMessageBox.StandardButton.No
+        )
+        
+        mensaje.setStyleSheet("""
+                                QMessageBox {
+                                    background-color: #F1E7DE;
+                                }
+                                
+                                QLabel {
+                                    color: #000000;
+                                    font-size: 14px;
+                                }
+                                
+                                QPushButton {
+                                    background-color: #EEDCD0;
+                                    color: #624839;
+                                    padding: 6px 12px;
+                                }
+                                
+                                QPushButton:hover {
+                                    background-color: #D4D2D7;
+                                }
+                                """)
+        
+        respuesta = mensaje.exec()
+        
+        if respuesta == QMessageBox.StandardButton.Yes:
+            self.borrarCuadricula()
+        
+    def guardarArchivo(self):
+        ruta, filtro = QFileDialog.getSaveFileName(
+            self,
+            "Guardar pixel art",
+            "",
+            "Archivos JSON (*.json)"
+        )
+        
+        if ruta != "":
+            with open(ruta, "w") as archivo:
+                json.dump(self.matrizPixeles,archivo, indent=4)
+        
+    def abrirArchivo(self):
+        ruta, filtro = QFileDialog.getOpenFileName(
+            self,
+            "Abrir pixel art",
+            "",
+            "Archivos JSON (*.json)"
+        )
+        
+        if ruta != "":
+            with open(ruta,"r") as archivo:
+                self.matrizPixeles = json.load(archivo)
+                self.rellenarCuadricula()
+                
+    def rellenarCuadricula(self):
+        for i in range(8):
+            for j in range(8):
+                color = self.matrizPixeles[i][j]
+                self.pintarPixel(i,j,color)
+                
 
 
 
