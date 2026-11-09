@@ -21,7 +21,7 @@ class ventanaPrincipal(QMainWindow):
 
         self.matrizBotones = []
         self.colorActual = "#FFFFFF"
-        self.setFixedSize(700,700)
+        self.setBaseSize(700,700)
         self.setStyleSheet("background: #F8F3EE;")
 
         self.layoutGeneral = QVBoxLayout()
@@ -203,8 +203,10 @@ class ventanaPrincipal(QMainWindow):
         self.tituloColorActual = QLabel(self.colorActual)
         self.tituloColorActual.setStyleSheet('font-family: "Jetbrains Mono"; font-weight: bold;')
 
-        self.frameColorActual = QFrame()
+        self.frameColorActual = QPushButton()
+        self.frameColorActual.clicked.connect(self.seleccionarColor)
         self.frameColorActual.setStyleSheet("border-radius: 20px; background: white;")
+        self.frameColorActual.setMinimumHeight(150)
 
         self.colorHex = QLineEdit(placeholderText= "Color Hexadecimal")
         self.colorHex.setStyleSheet('background: #D9B79F; font-family: "Jetbrains Mono"; font-weight: bold; border-radius: 20px;')
@@ -212,6 +214,9 @@ class ventanaPrincipal(QMainWindow):
 
         self.layoutPaleta.addWidget(self.textoPaleta)
         self.layoutPaleta.addWidget(self.frameColores)
+        
+        self.layoutPaleta.addStretch()
+        
         self.layoutPaleta.addWidget(self.tituloColorActual)
         self.layoutPaleta.addWidget(self.frameColorActual)
         self.layoutPaleta.addWidget(self.colorHex)
@@ -277,6 +282,7 @@ class ventanaPrincipal(QMainWindow):
             self.matrizBotones.append(filaBotones)
 
         self.botonExportar = QPushButton("EXPORTAR")
+        self.botonExportar.clicked.connect(self.exportarCodigo)
         self.botonExportar.setStyleSheet("""
             QPushButton {font-size: 40px; font-family: "Acme"; background: #C98B70; color: white;}
         QPushButton:hover {background: #B4765B;}
@@ -379,13 +385,206 @@ class ventanaPrincipal(QMainWindow):
             for j in range(8):
                 color = self.matrizPixeles[i][j]
                 self.pintarPixel(i,j,color)
-                
+
+    def seleccionarColor(self):
+        dialogo = QColorDialog(self.colorActual, self)
+        dialogo.setWindowTitle("Seleccionar color")
+
+        dialogo.setStyleSheet("""
+            QColorDialog {
+                background-color: #F1E7DE;
+            }
+
+            QLabel {
+                color: #000000;
+            }
+
+            QPushButton {
+                background-color: #D9B79F;
+                color: #000000;
+                padding: 6px;
+                border-radius: 5px;
+            }
+
+            QPushButton:hover {
+                background-color: #C99A80;
+            }
+
+            QLineEdit {
+                background-color: white;
+                color: black;
+            }
+
+            QSpinBox {
+                background-color: white;
+                color: black;
+            }
+        """)
+
+        if dialogo.exec():
+            color = dialogo.currentColor()
+
+            if color.isValid():
+                self.colorActual = color.name().upper()
+
+                self.frameColorActual.setStyleSheet(
+                    f"background: {self.colorActual}; border-radius: 20px;"
+                )
+
+                self.tituloColorActual.setText(self.colorActual)
+    
+    def exportarCodigo(self):
+        matrizLeds = []
+        
+        for i in range(8):
+            fila = []
+            for j in range(8):
+                fila.append(self.matrizPixeles[i][j])
+            if i % 2 == 1:
+                fila.reverse()
+            matrizLeds.append(fila)
+        
+        
+        texto, aceptado = QInputDialog.getText(
+            self,
+            "Exportar código",
+            "Nombre del Pixel Art (sin espacios): "
+        )
+        
+        if aceptado and " " not in texto:
+            nombrePixelArt = texto
+            
+            codigoExportado = f"void {nombrePixelArt}()" + "{\n"
+            
+            numeroLED = 0
+            for i in range(8):
+                for j in range(8):
+                    codigoExportado += f"\tleds[{numeroLED}] = CRGB" + f"{self.hexARGB(matrizLeds[i][j])};\n"
+                    numeroLED += 1
+            
+            codigoExportado += "\n\tFastLED.show();\n"
+            codigoExportado += "}"
+            
+            print(codigoExportado)
+            
+            portapapeles = QApplication.clipboard()
+            portapapeles.setText(codigoExportado)
+            
+            QMessageBox.information(
+                self,
+                "Codigo exportado",
+                "El codigo se copio correctamente al portapapeles."
+            )
+        
+        elif aceptado and " " in texto:
+            print("Titulo invalido")
+            QMessageBox.warning(
+                self,
+                "Error",
+                "El nombre es inválido."
+            )
+        
+    
+    def hexARGB(self, color):
+        r = int(color[1:3],16)
+        g = int(color[3:5],16)
+        b = int(color[5:],16)
+        
+        rgb = r, g, b
+        
+        return str(rgb)
 
 
 
 colorActual = "#FFFFFF"
 
 app = QApplication(sys.argv)
+
+app.setStyleSheet("""
+        QMainWindow {
+        background-color: #F1E7DE;
+    }
+
+
+    /* ===== TEXTOS ===== */
+
+    QLabel {
+        color: #624839;
+        font-family: "JetBrains Mono";
+        font-weight: bold;
+    }
+
+
+    /* ===== BOTONES ===== */
+
+    QPushButton {
+        background-color: #D9B79F;
+        color: #624839;
+
+        font-family: "JetBrains Mono";
+        font-weight: bold;
+
+        border: none;
+        border-radius: 10px;
+
+        padding: 6px;
+    }
+
+    QPushButton:hover {
+        background-color: #D4D2D7;
+    }
+
+    QPushButton:pressed {
+        background-color: #C99A80;
+    }
+
+
+    /* ===== CAMPOS DE TEXTO ===== */
+
+    QLineEdit {
+        background-color: #D9B79F;
+        color: #624839;
+
+        font-family: "JetBrains Mono";
+        font-weight: bold;
+
+        border: none;
+        border-radius: 20px;
+
+        padding: 6px 10px;
+    }
+
+    QLineEdit:focus {
+        border: 2px solid #624839;
+    }
+
+
+    /* ===== FRAMES ===== */
+
+    QFrame {
+        background-color: #F1E7DE;
+    }
+
+
+    /* ===== DIÁLOGOS ===== */
+
+    QDialog {
+        background-color: #F1E7DE;
+        color: #624839;
+    }
+
+    QMessageBox {
+        background-color: #F1E7DE;
+    }
+
+    QMessageBox QLabel {
+        color: #624839;
+    }
+
+    QMessageBox QPushButton {
+        min-width: 70px;
+    }
+""")
 
 si = ventanaPrincipal()
 si.ventanaBase()
